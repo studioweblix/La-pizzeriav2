@@ -37,7 +37,21 @@ function normalizeOpeningHours(
   return [];
 }
 
-export function OpeningHours({ settings }: { settings: StoreSettings | null }) {
+interface OpeningHoursProps {
+  settings: StoreSettings | null;
+  kicker?: string;
+  title?: string;
+  intro?: string;
+  boxKicker?: string;
+}
+
+export function OpeningHours({
+  settings,
+  kicker = "Herzlich Willkommen",
+  title = "Unsere Öffnungszeiten",
+  intro = "Wir freuen uns auf Ihren Besuch. Genießen Sie unsere Küche zu den folgenden Zeiten.",
+  boxKicker = "Für Sie da",
+}: OpeningHoursProps) {
   const hours = normalizeOpeningHours(settings?.opening_hours ?? null);
   const todayName = getTodayName();
 
@@ -51,17 +65,16 @@ export function OpeningHours({ settings }: { settings: StoreSettings | null }) {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 lg:items-start">
           <div>
             <p className="text-sm font-medium uppercase tracking-widest text-[var(--color-secondary)]">
-              Herzlich Willkommen
+              {kicker}
             </p>
             <h2
               className="mt-3 font-heading text-3xl font-medium text-white md:text-4xl lg:text-5xl"
               style={{ fontFamily: "var(--font-heading), serif" }}
             >
-              Unsere Öffnungszeiten
+              {title}
             </h2>
             <p className="mt-6 max-w-lg text-base text-white/60 leading-relaxed">
-              Wir freuen uns auf Ihren Besuch. Genießen Sie unsere Küche zu den
-              folgenden Zeiten.
+              {intro}
             </p>
           </div>
 
@@ -72,7 +85,7 @@ export function OpeningHours({ settings }: { settings: StoreSettings | null }) {
           ) : (
             <div className="rounded-lg border border-white/10 bg-[var(--color-dark)]/60 backdrop-blur-sm p-6 md:p-8">
               <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-[var(--color-secondary)]">
-                Für Sie da
+                {boxKicker}
               </p>
               <ul className="divide-y divide-white/10">
                 {hours.map((row) => {

@@ -188,23 +188,29 @@ export async function createReservation(data: {
   time: string;
   guests: number;
   message?: string;
+  table_size?: number;
+  source?: string;
 }): Promise<Reservation> {
   const supabase = await createClient();
   const tenantId = getTenantId();
 
+  const rowInsert: Record<string, unknown> = {
+    tenant_id: tenantId,
+    name: data.name,
+    email: data.email,
+    phone: data.phone || null,
+    date: data.date,
+    time: data.time,
+    guests: data.guests,
+    message: data.message || null,
+    status: "pending",
+  };
+  if (data.table_size !== undefined) rowInsert.table_size = data.table_size;
+  if (data.source !== undefined) rowInsert.source = data.source;
+
   const { data: row, error } = await supabase
     .from("reservations")
-    .insert({
-      tenant_id: tenantId,
-      name: data.name,
-      email: data.email,
-      phone: data.phone || null,
-      date: data.date,
-      time: data.time,
-      guests: data.guests,
-      message: data.message || null,
-      status: "pending",
-    })
+    .insert(rowInsert)
     .select()
     .single();
 

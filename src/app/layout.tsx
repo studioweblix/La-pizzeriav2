@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import { getTenant, getSettings, getPageContent } from "@/lib/data";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-heading",
+const cormorant = Cormorant_Garamond({
+  /** Nicht „--font-heading“ nennen – in @theme bauen wir daraus die finale Stack-Variable. */
+  variable: "--font-heading-src",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
 const inter = Inter({
-  variable: "--font-body",
+  variable: "--font-body-src",
   subsets: ["latin"],
   display: "swap",
 });
@@ -22,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     getTenant(),
     getPageContent("home"),
   ]);
-  const title = tenant?.name ?? "Restaurant";
+  const title = "La Pizza";
   const content = pageHome?.content ?? {};
   const description =
     (typeof content.hero_subtitle === "string" && content.hero_subtitle.trim())
@@ -63,7 +65,7 @@ export default async function RootLayout({
   const [tenant, settings] = await Promise.all([getTenant(), getSettings()]);
 
   return (
-    <html lang="de" className={`${playfair.variable} ${inter.variable}`}>
+    <html lang="de" className={`${cormorant.variable} ${inter.variable}`}>
       <body className="min-h-screen antialiased font-body bg-[var(--color-dark)] text-neutral-100">
         <Navbar tenant={tenant} />
         <main className="min-h-screen">{children}</main>

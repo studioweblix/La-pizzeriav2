@@ -21,7 +21,7 @@ export default async function ReservierungPage() {
 
   const content = pageReservierung?.content ?? {};
   const speisekarteContent = pageSpeisekarte?.content ?? {};
-  const tenantName = tenant?.name ?? "Restaurant";
+  const tenantName = tenant?.name ?? "La Pizza";
 
   const heroImage =
     typeof content.hero_image === "string"
@@ -51,9 +51,9 @@ export default async function ReservierungPage() {
             alt=""
             fill
             priority
+            quality={92}
             className="object-cover"
             sizes="100vw"
-            unoptimized={!heroImage.startsWith("/")}
           />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-dark-card)]" />
@@ -77,7 +77,7 @@ export default async function ReservierungPage() {
 
       {/* Content */}
       <AnimatedSection animation="slideUp" as="section" className="py-16 md:py-24">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
           {isExternal ? (
             <ExternalWidget
@@ -87,7 +87,7 @@ export default async function ReservierungPage() {
           ) : reservationType === "custom" ? (
             <CustomEmbed code={widgetCode} />
           ) : (
-            <ReservationForm />
+            <ReservationForm settings={settings} />
           )}
 
         </div>

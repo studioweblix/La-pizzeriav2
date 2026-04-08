@@ -58,9 +58,15 @@ const cardVariants = {
 
 interface HighlightsProps {
   categories: Category[];
+  kicker?: string;
+  title?: string;
 }
 
-export function Highlights({ categories }: HighlightsProps) {
+export function Highlights({
+  categories,
+  kicker = "Genussvolle Momente",
+  title = "Unsere Highlights",
+}: HighlightsProps) {
   if (categories.length === 0) return null;
 
   return (
@@ -71,9 +77,9 @@ export function Highlights({ categories }: HighlightsProps) {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="text-center text-sm font-medium uppercase tracking-widest text-[var(--color-secondary)]">
-          Genussvolle Momente
+          {kicker}
         </p>
-        <SectionHeading title="Unsere Highlights" className="mt-3" />
+        <SectionHeading title={title} className="mt-3" />
 
         <AnimatedStagger
           as="div"
@@ -101,15 +107,6 @@ export function Highlights({ categories }: HighlightsProps) {
             );
           })}
         </AnimatedStagger>
-
-        <div className="mt-12 text-center">
-          <Link
-            href="/speisekarte"
-            className="inline-flex items-center gap-2 rounded-sm border border-[var(--color-secondary)] px-8 py-3 text-sm font-semibold uppercase tracking-widest text-[var(--color-secondary)] transition-colors hover:bg-[var(--color-secondary)] hover:text-[var(--color-dark)]"
-          >
-            Zur vollständigen Speisekarte
-          </Link>
-        </div>
       </div>
     </AnimatedSection>
   );

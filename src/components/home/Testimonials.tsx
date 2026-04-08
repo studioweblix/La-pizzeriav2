@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Star } from "lucide-react";
 import type { Testimonial } from "@/types";
 
@@ -11,6 +11,8 @@ const AUTO_SCROLL_MS = 6000;
 interface TestimonialsProps {
   testimonials: Testimonial[];
   backgroundImage: string | null;
+  kicker?: string;
+  title?: string;
 }
 
 function clampRating(rating: number) {
@@ -43,10 +45,18 @@ function getSourceLabel(source: string): string {
   return "Gästebewertung";
 }
 
-export function Testimonials({ testimonials, backgroundImage }: TestimonialsProps) {
+export function Testimonials({
+  testimonials,
+  backgroundImage,
+  kicker = "Kundenstimmen",
+  title = "Was sagen unsere Gäste?",
+}: TestimonialsProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const len = testimonials.length;
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], ["-35%", "35%"]);
 
   const goTo = useCallback(
     (next: number) => setIndex((next + len) % len),
@@ -63,35 +73,38 @@ export function Testimonials({ testimonials, backgroundImage }: TestimonialsProp
 
   return (
     <section
-      className="relative min-h-[70vh] flex items-center overflow-hidden"
+      ref={ref}
+      className="relative h-[55vh] min-h-[360px] flex items-center overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Hintergrundbild */}
+      {/* Hintergrundbild mit Parallax */}
       {backgroundImage ? (
-        <Image
-          src={backgroundImage}
-          alt=""
-          fill
-          className="object-cover"
-          sizes="100vw"
-          unoptimized={!backgroundImage.startsWith("/")}
-        />
+        <motion.div className="absolute inset-[-35%]" style={{ y }}>
+          <Image
+            src={backgroundImage}
+            alt=""
+            fill
+            quality={90}
+            className="object-cover"
+            sizes="100vw"
+            
+          />
+        </motion.div>
       ) : (
         <div className="absolute inset-0 bg-[var(--color-dark-card)]" />
       )}
-      <div className="absolute inset-0 bg-black/60" />
 
       {/* Inhalt */}
       <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-20 sm:px-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-secondary)]">
-          Kundenstimmen
+          {kicker}
         </p>
         <h2
           className="mt-3 font-heading text-3xl font-medium text-white md:text-4xl"
           style={{ fontFamily: "var(--font-heading), serif" }}
         >
-          Was sagen unsere Gäste?
+          {title}
         </h2>
 
         {item ? (

@@ -49,7 +49,7 @@ export function Footer({
   settings: StoreSettings | null;
 }) {
   const year = new Date().getFullYear();
-  const tenantName = tenant?.name ?? "Restaurant";
+  const tenantName = tenant?.name ?? "La Pizza";
 
   const mapsQuery = settings?.address
     ? encodeURIComponent(settings.address)
@@ -64,7 +64,7 @@ export function Footer({
         <div className="mb-10 text-center">
           <img
             src="/logo.svg"
-            alt="La Pizza Kempten"
+            alt="La Pizza"
             className="mx-auto h-20 w-auto"
           />
           <div className="mt-3 flex items-center justify-center gap-2">

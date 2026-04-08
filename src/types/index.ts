@@ -53,6 +53,23 @@ export type ReservationType =
   | "formitable"
   | "custom";
 
+/** Konfiguration für interne Reservierung / Slot-Prüfung (JSON in store_settings) */
+export interface ReservationTableConfig {
+  seats: number;
+  count: number;
+}
+
+export interface ReservationConfig {
+  slot_interval_minutes: number;
+  buffer_minutes: number;
+  avg_dining_minutes: number;
+  tables: ReservationTableConfig[];
+  /** Optional: Kapazität für Auslastung; sonst Summe aus tables */
+  total_seats?: number;
+  /** Max. Gäste pro Reservierung (Formular); optional, Standard 8 */
+  max_party_size?: number;
+}
+
 export interface StoreSettings {
   id: string;
   tenant_id: string;
@@ -66,6 +83,7 @@ export interface StoreSettings {
   reservation_type: ReservationType | null;
   reservation_external_id: string | null;
   reservation_widget_code: string | null;
+  reservation_config: ReservationConfig | Record<string, unknown> | null;
 }
 
 export interface Reservation {
@@ -80,6 +98,10 @@ export interface Reservation {
   message: string | null;
   status: "pending" | "confirmed" | "cancelled";
   created_at: string;
+  /** Zugewiesene Tischgröße (Sitzplätze), optional je nach Schema */
+  table_size?: number | null;
+  /** z. B. website */
+  source?: string | null;
 }
 
 export interface Tenant {

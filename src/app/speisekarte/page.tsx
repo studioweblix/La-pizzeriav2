@@ -16,7 +16,7 @@ export default async function SpeisekartePage({
   ]);
 
   const content = page?.content ?? {};
-  const tenantName = tenant?.name ?? "Restaurant";
+  const tenantName = tenant?.name ?? "La Pizza";
   const heroImage =
     typeof content.hero_image === "string" ? content.hero_image : null;
 
@@ -47,9 +47,9 @@ export default async function SpeisekartePage({
             alt=""
             fill
             priority
+            quality={92}
             className="object-cover"
             sizes="100vw"
-            unoptimized={!heroImage.startsWith("/")}
           />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-dark-card)]" />

@@ -46,7 +46,7 @@ export function Navbar({ tenant }: { tenant: Tenant | null }) {
           <Link href="/" className="flex items-center gap-3 shrink-0">
             <img
               src="/logo.svg"
-              alt="La Pizza Kempten"
+              alt="La Pizza"
               className="h-16 w-auto"
             />
           </Link>
@@ -113,7 +113,7 @@ export function Navbar({ tenant }: { tenant: Tenant | null }) {
               <div className="flex h-20 items-center justify-between px-6 border-b border-white/10">
                 <img
                   src="/logo.svg"
-                  alt="La Pizza Kempten"
+                  alt="La Pizza"
                   className="h-14 w-auto"
                 />
                 <button

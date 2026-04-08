@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Star, Phone, Check } from "lucide-react";
+import { Star, Phone } from "lucide-react";
 import { getPageContent, getSettings, getTenant } from "@/lib/data";
 import { AnimatedSection } from "@/components/ui/AnimatedSection";
 
@@ -23,9 +23,9 @@ function ImageBlock({ src, className, placeholder = false }: { src: string | nul
         src={src}
         alt=""
         fill
+        quality={90}
         className="object-cover"
         sizes="(max-width: 768px) 100vw, 50vw"
-        unoptimized={!src.startsWith("/")}
       />
     </div>
   );
@@ -39,7 +39,7 @@ export default async function UeberUnsPage() {
   ]);
 
   const c = pageAbout?.content ?? {};
-  const tenantName = tenant?.name ?? "Restaurant";
+  const tenantName = tenant?.name ?? "La Pizza";
   const phone = settings?.phone ?? null;
   const telHref = phone ? `tel:${phone.replace(/\s/g, "")}` : null;
 
@@ -54,25 +54,7 @@ export default async function UeberUnsPage() {
     ? c.text : null;
   const section1Image = typeof c.image === "string" ? c.image : null;
 
-  const section2Subtitle = typeof c.section2_subtitle === "string"
-    ? c.section2_subtitle : "Beste Qualität";
-  const section2Title = typeof c.section2_title === "string"
-    ? c.section2_title : "Genießen Sie das Beste der Küche";
-  const section2Text = typeof c.section2_text === "string" && c.section2_text.trim()
-    ? c.section2_text : null;
   const section2Image = typeof c.image2 === "string" ? c.image2 : null;
-
-  const feature1Title = typeof c.feature1_title === "string"
-    ? c.feature1_title : "Traditionelle Hauptgerichte";
-  const feature1Items = Array.isArray(c.feature1_items)
-    ? (c.feature1_items as string[])
-    : ["Mit regionalen Zutaten zubereitet", "Saisonale Spezialitäten", "Küche auf höchstem Niveau"];
-
-  const feature2Title = typeof c.feature2_title === "string"
-    ? c.feature2_title : "Exquisite Wildgerichte";
-  const feature2Items = Array.isArray(c.feature2_items)
-    ? (c.feature2_items as string[])
-    : ["Aus regionaler Jagd", "Mit hausgemachten Beilagen", "Für wahre Genießer"];
 
   return (
     <div className="min-h-screen bg-[var(--color-dark)]">
@@ -85,9 +67,9 @@ export default async function UeberUnsPage() {
             alt=""
             fill
             priority
+            quality={92}
             className="object-cover"
             sizes="100vw"
-            unoptimized={!heroImage.startsWith("/")}
           />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-dark-card)]" />
@@ -171,103 +153,6 @@ export default async function UeberUnsPage() {
               </div>
               <div className="absolute right-[0%] top-0 w-[44%] overflow-hidden rounded-lg shadow-2xl aspect-[3/4]">
                 <ImageBlock src={section2Image} className="h-full w-full" placeholder />
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </AnimatedSection>
-
-      {/* ── Sektion 2: Text links + Bild & Feature-Karten rechts ── */}
-      <AnimatedSection animation="slideUp" as="section" className="py-20 md:py-28 bg-[var(--color-dark-card)]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-start">
-
-            {/* Links: Text */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-secondary)]">
-                {section2Subtitle}
-              </p>
-              <h2
-                className="mt-3 font-heading text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl"
-                style={{ fontFamily: "var(--font-heading), serif" }}
-              >
-                {section2Title}
-              </h2>
-              <div className="mt-6 space-y-4 text-sm leading-relaxed text-white/70 md:text-base">
-                {section2Text ? (
-                  <p className="whitespace-pre-line">{section2Text}</p>
-                ) : (
-                  <p className="italic text-white/40">
-                    Text hier einfügen (Seite &quot;about&quot;, Feld &quot;section2_text&quot;).
-                  </p>
-                )}
-              </div>
-
-              {telHref && (
-                <div className="mt-10 flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-[var(--color-secondary)]" />
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-white/50">
-                      Für weitere Informationen:
-                    </p>
-                    <a
-                      href={telHref}
-                      className="block text-xl font-semibold text-[var(--color-secondary)] transition-opacity hover:opacity-80 md:text-2xl"
-                      style={{ fontFamily: "var(--font-heading), serif" }}
-                    >
-                      {phone}
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Rechts: Bild oben + 2 Feature-Karten unten */}
-            <div className="space-y-6">
-              <ImageBlock
-                src={section2Image}
-                className="aspect-[16/9] w-full rounded-lg"
-              />
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                {/* Karte 1 */}
-                <div className="rounded-lg border border-white/10 bg-[var(--color-dark)]/60 p-6">
-                  <h3
-                    className="font-heading text-xl font-medium text-white md:text-2xl"
-                    style={{ fontFamily: "var(--font-heading), serif" }}
-                  >
-                    <span className="block text-sm font-normal text-white/50">{feature1Title.split(" ")[0]}</span>
-                    {feature1Title.split(" ").slice(1).join(" ")}
-                  </h3>
-                  <ul className="mt-4 space-y-2.5">
-                    {feature1Items.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm text-white/65">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-secondary)]" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Karte 2 */}
-                <div className="rounded-lg border border-white/10 bg-[var(--color-dark)]/60 p-6">
-                  <h3
-                    className="font-heading text-xl font-medium text-white md:text-2xl"
-                    style={{ fontFamily: "var(--font-heading), serif" }}
-                  >
-                    <span className="block text-sm font-normal text-white/50">{feature2Title.split(" ")[0]}</span>
-                    {feature2Title.split(" ").slice(1).join(" ")}
-                  </h3>
-                  <ul className="mt-4 space-y-2.5">
-                    {feature2Items.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm text-white/65">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-secondary)]" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
               </div>
             </div>
 

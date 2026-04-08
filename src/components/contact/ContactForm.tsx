@@ -4,25 +4,34 @@ import { useState } from "react";
 
 export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
     setStatus("sending");
+    setErrorMessage(null);
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         body: formData,
       });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+      };
       if (res.ok) {
         setStatus("success");
         form.reset();
       } else {
         setStatus("error");
+        setErrorMessage(
+          typeof data.error === "string" ? data.error : null
+        );
       }
     } catch {
       setStatus("error");
+      setErrorMessage(null);
     }
   }
 
@@ -48,7 +57,10 @@ export function ContactForm() {
           </p>
           <button
             type="button"
-            onClick={() => setStatus("idle")}
+            onClick={() => {
+              setStatus("idle");
+              setErrorMessage(null);
+            }}
             className="mt-4 text-xs text-[var(--color-secondary)] underline underline-offset-4 hover:no-underline"
           >
             Weitere Nachricht senden
@@ -95,8 +107,9 @@ export function ContactForm() {
           />
 
           {status === "error" && (
-            <p className="text-xs text-red-400">
-              Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.
+            <p className="text-xs text-red-400/95">
+              {errorMessage ??
+                "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es später erneut."}
             </p>
           )}
 

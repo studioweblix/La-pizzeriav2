@@ -14,22 +14,23 @@ export function ImageDivider({ imageUrl }: ImageDividerProps) {
     target: ref,
     offset: ["start end", "end start"],
   });
-  const y = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ["-35%", "35%"]);
 
   return (
     <section
       ref={ref}
-      className="relative w-full h-[40vh] min-h-[280px] max-h-[520px] overflow-hidden"
+      className="relative w-full h-[55vh] min-h-[360px] overflow-hidden"
     >
       {imageUrl ? (
-        <motion.div className="absolute inset-[-15%]" style={{ y }}>
+        <motion.div className="absolute inset-[-35%]" style={{ y }}>
           <Image
             src={imageUrl}
             alt=""
             fill
+            quality={90}
             className="object-cover"
             sizes="100vw"
-            unoptimized={!imageUrl.startsWith("/")}
+            
           />
         </motion.div>
       ) : (
@@ -37,7 +38,6 @@ export function ImageDivider({ imageUrl }: ImageDividerProps) {
           Atmosphären-Bild hier einfügen (Feld: divider_image in Seite &quot;home&quot;)
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-dark)] via-transparent to-[var(--color-dark-card)] opacity-40" />
     </section>
   );
 }

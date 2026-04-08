@@ -1,8 +1,7 @@
 import Image from "next/image";
 import { Phone, Mail, MapPin } from "lucide-react";
-import { getPageContent, getSettings, getTenant } from "@/lib/data";
+import { getPageContent, getSettings } from "@/lib/data";
 import { AnimatedSection } from "@/components/ui/AnimatedSection";
-import { ContactForm } from "@/components/contact/ContactForm";
 
 export const metadata = {
   title: "Kontakt",
@@ -10,16 +9,14 @@ export const metadata = {
 };
 
 export default async function KontaktPage() {
-  const [page, pageSpeisekarte, settings, tenant] = await Promise.all([
+  const [page, pageSpeisekarte, settings] = await Promise.all([
     getPageContent("kontakt"),
     getPageContent("speisekarte"),
     getSettings(),
-    getTenant(),
   ]);
 
   const content = page?.content ?? {};
   const speisekarteContent = pageSpeisekarte?.content ?? {};
-  const tenantName = tenant?.name ?? "Restaurant";
   const heroImage =
     typeof content.hero_image === "string"
       ? content.hero_image
@@ -29,7 +26,7 @@ export default async function KontaktPage() {
   const description =
     typeof content.description === "string" && content.description.trim()
       ? content.description
-      : `${tenantName} ist Ihr Ort für authentische Küche. Genießen Sie traditionelle Spezialitäten in einem einzigartigen historischen Ambiente.`;
+      : null;
 
   const phone = settings?.phone ?? null;
   const email = settings?.email ?? null;
@@ -46,9 +43,9 @@ export default async function KontaktPage() {
             alt=""
             fill
             priority
+            quality={92}
             className="object-cover"
             sizes="100vw"
-            unoptimized={!heroImage.startsWith("/")}
           />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-dark-card)]" />
@@ -70,83 +67,78 @@ export default async function KontaktPage() {
         </div>
       </section>
 
-      {/* Content: Info links + Formular rechts */}
+      {/* Kontaktinfos, zentriert */}
       <AnimatedSection animation="slideUp" as="section" className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-14 lg:grid-cols-[1fr_1.1fr] lg:gap-20 lg:items-start">
+        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          {description && (
+            <p className="mx-auto text-[13px] leading-relaxed text-white/45">
+              {description}
+            </p>
+          )}
 
-            {/* Links: Kontaktinfos */}
-            <div>
-              <h2
-                className="font-heading text-lg font-medium italic text-white/90 md:text-xl"
-                style={{ fontFamily: "var(--font-heading), serif" }}
-              >
-                {tenantName}
-              </h2>
-              <p className="mt-4 max-w-md text-[13px] leading-relaxed text-white/40">
-                {description}
+          <div className="mt-12 space-y-10">
+            <div className="flex flex-col items-center gap-2">
+              <Phone
+                className="h-5 w-5 text-[var(--color-secondary)]/70"
+                strokeWidth={1.5}
+              />
+              <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
+                Telefon
               </p>
-
-              <div className="mt-10 space-y-7">
-                <div className="flex items-start gap-3">
-                  <Phone className="mt-1 h-[18px] w-[18px] shrink-0 text-[var(--color-secondary)]/60" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
-                      Telefon
-                    </p>
-                    {phone ? (
-                      <a
-                        href={`tel:${phone.replace(/\s/g, "")}`}
-                        className="mt-0.5 block text-[15px] font-medium text-[var(--color-secondary)] transition-opacity hover:opacity-80"
-                      >
-                        {phone}
-                      </a>
-                    ) : (
-                      <p className="mt-0.5 text-[13px] italic text-white/20">Im Dashboard hinterlegen</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Mail className="mt-1 h-[18px] w-[18px] shrink-0 text-[var(--color-secondary)]/60" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
-                      E-Mail
-                    </p>
-                    {email ? (
-                      <a
-                        href={`mailto:${email}`}
-                        className="mt-0.5 block text-[15px] font-medium text-[var(--color-secondary)] transition-opacity hover:opacity-80"
-                      >
-                        {email}
-                      </a>
-                    ) : (
-                      <p className="mt-0.5 text-[13px] italic text-white/20">Im Dashboard hinterlegen</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-[18px] w-[18px] shrink-0 text-[var(--color-secondary)]/60" strokeWidth={1.5} />
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
-                      Adresse
-                    </p>
-                    {address ? (
-                      <p className="mt-0.5 whitespace-pre-line text-[13px] leading-relaxed text-white/70">
-                        {address}
-                      </p>
-                    ) : (
-                      <p className="mt-0.5 text-[13px] italic text-white/20">Im Dashboard hinterlegen</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {phone ? (
+                <a
+                  href={`tel:${phone.replace(/\s/g, "")}`}
+                  className="text-[15px] font-medium text-[var(--color-secondary)] transition-opacity hover:opacity-80"
+                >
+                  {phone}
+                </a>
+              ) : (
+                <p className="text-[13px] italic text-white/25">
+                  Im Dashboard hinterlegen
+                </p>
+              )}
             </div>
 
-            {/* Rechts: Kontaktformular */}
-            <ContactForm />
+            <div className="flex flex-col items-center gap-2">
+              <Mail
+                className="h-5 w-5 text-[var(--color-secondary)]/70"
+                strokeWidth={1.5}
+              />
+              <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
+                E-Mail
+              </p>
+              {email ? (
+                <a
+                  href={`mailto:${email}`}
+                  className="text-[15px] font-medium text-[var(--color-secondary)] transition-opacity hover:opacity-80"
+                >
+                  {email}
+                </a>
+              ) : (
+                <p className="text-[13px] italic text-white/25">
+                  Im Dashboard hinterlegen
+                </p>
+              )}
+            </div>
 
+            <div className="flex flex-col items-center gap-2">
+              <MapPin
+                className="h-5 w-5 text-[var(--color-secondary)]/70"
+                strokeWidth={1.5}
+              />
+              <p className="text-[11px] font-medium uppercase tracking-widest text-white/35">
+                Adresse
+              </p>
+              {address ? (
+                <p className="max-w-md whitespace-pre-line text-[13px] leading-relaxed text-white/70">
+                  {address}
+                </p>
+              ) : (
+                <p className="text-[13px] italic text-white/25">
+                  Im Dashboard hinterlegen
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </AnimatedSection>
