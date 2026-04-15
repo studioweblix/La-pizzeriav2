@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type {
   Category,
@@ -31,6 +32,7 @@ function mapProduct(row: {
 }
 
 export async function getProducts(): Promise<Product[]> {
+  noStore();
   const supabase = await createClient();
   const tenantId = getTenantId();
 
@@ -93,6 +95,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
+  noStore();
   const supabase = await createClient();
   const tenantId = getTenantId();
 

@@ -3,6 +3,9 @@ import { getProducts, getCategories, getTenant, getPageContent } from "@/lib/dat
 import { MenuSidebar } from "@/components/menu/MenuSidebar";
 import { MenuItem } from "@/components/menu/MenuItem";
 
+/** Immer aktuelle Daten aus Supabase (neue Gerichte ohne Rebuild sichtbar). */
+export const dynamic = "force-dynamic";
+
 export default async function SpeisekartePage({
   searchParams,
 }: {
@@ -31,9 +34,15 @@ export default async function SpeisekartePage({
     ? categoryBySlug.get(activeSlugResolved)?.id ?? null
     : null;
 
-  const filtered = activeCategoryId
+  /** Ohne Kategorie zugewiesen – erschienen sonst in keiner gefilterten Ansicht. */
+  const uncategorized = products.filter((p) => !p.category_id);
+
+  const hasCategoryFilter = activeCategoryId != null;
+  const filtered = hasCategoryFilter
     ? products.filter((p) => p.category_id === activeCategoryId)
     : products;
+
+  const showSonstiges = hasCategoryFilter && uncategorized.length > 0;
 
   const activeSlug = activeSlugResolved;
 
@@ -104,9 +113,30 @@ export default async function SpeisekartePage({
                 ))}
               </ul>
 
-              {filtered.length === 0 && (
+              {showSonstiges && (
+                <>
+                  <h3
+                    className="font-heading mt-14 text-xl font-medium tracking-wide text-white/90 md:text-2xl mb-8"
+                    style={{ fontFamily: "var(--font-heading), serif" }}
+                  >
+                    Sonstiges
+                  </h3>
+                  <ul className="space-y-4">
+                    {uncategorized.map((product) => (
+                      <MenuItem key={product.id} product={product} />
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {filtered.length === 0 && !showSonstiges && (
                 <p className="py-12 text-center text-white/50">
                   Keine Gerichte in dieser Kategorie.
+                </p>
+              )}
+              {filtered.length === 0 && showSonstiges && (
+                <p className="py-6 text-center text-sm text-white/40">
+                  Keine Gerichte in dieser Kategorie – siehe unten unter Sonstiges.
                 </p>
               )}
             </div>

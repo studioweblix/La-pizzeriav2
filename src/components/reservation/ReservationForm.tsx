@@ -83,6 +83,37 @@ function formatTimesLine(times: { open: string; close: string }[]): string {
   return times.map((t) => `${t.open} – ${t.close}`).join(" · ");
 }
 
+function parseTimeStr(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return NaN;
+  return h * 60 + m;
+}
+
+function getSimpleTimeSlots(
+  hours: OpeningHour[],
+  date: string,
+  intervalMinutes = 30
+): string[] {
+  if (!date) return [];
+  const d = new Date(date + "T12:00:00");
+  const dayName = GERMAN_DAYS[d.getDay()];
+  const row = hours.find((h) => h.day === dayName);
+  if (!row || row.closed || !row.times?.length) return [];
+
+  const slots: string[] = [];
+  for (const range of row.times) {
+    const openMin = parseTimeStr(range.open);
+    const closeMin = parseTimeStr(range.close);
+    if (isNaN(openMin) || isNaN(closeMin) || closeMin <= openMin) continue;
+    for (let m = openMin; m <= closeMin - intervalMinutes; m += intervalMinutes) {
+      const hh = Math.floor(m / 60).toString().padStart(2, "0");
+      const mm = (m % 60).toString().padStart(2, "0");
+      slots.push(`${hh}:${mm}`);
+    }
+  }
+  return slots;
+}
+
 interface ReservationFormProps {
   settings: StoreSettings | null;
 }
@@ -119,7 +150,6 @@ export function ReservationForm({ settings }: ReservationFormProps) {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
@@ -128,6 +158,9 @@ export function ReservationForm({ settings }: ReservationFormProps) {
   >("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  type ConfirmationData = { name: string; date: string; time: string; guests: number };
+  const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null);
 
   const phoneDisplay = settings?.phone ?? null;
   const address = settings?.address ?? null;
@@ -188,6 +221,11 @@ export function ReservationForm({ settings }: ReservationFormProps) {
     [openingHours]
   );
 
+  const simpleTimeSlots = useMemo(
+    () => getSimpleTimeSlots(openingHours, date),
+    [openingHours, date]
+  );
+
   useEffect(() => {
     if (!date || openDates.length === 0) return;
     if (!openDates.includes(date)) {
@@ -196,6 +234,10 @@ export function ReservationForm({ settings }: ReservationFormProps) {
       setSelectedTime(null);
     }
   }, [date, openDates]);
+
+  useEffect(() => {
+    setManualTime("");
+  }, [date]);
 
   const step1Ready = Boolean(date && guests >= 1);
 
@@ -253,7 +295,6 @@ export function ReservationForm({ settings }: ReservationFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          email: email.trim(),
           phone: phone.trim(),
           date,
           time: manualTime.trim(),
@@ -266,6 +307,12 @@ export function ReservationForm({ settings }: ReservationFormProps) {
         error?: string;
       };
       if (res.ok && data.success) {
+        setConfirmationData({
+          name: name.trim(),
+          date,
+          time: manualTime.trim(),
+          guests,
+        });
         setSelectedTime(manualTime.trim());
         setSuccess(true);
         setSubmitStatus("idle");
@@ -292,7 +339,6 @@ export function ReservationForm({ settings }: ReservationFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          email: email.trim(),
           phone: phone.trim(),
           date,
           time: selectedTime,
@@ -305,6 +351,12 @@ export function ReservationForm({ settings }: ReservationFormProps) {
         error?: string;
       };
       if (res.ok && data.success) {
+        setConfirmationData({
+          name: name.trim(),
+          date,
+          time: selectedTime,
+          guests,
+        });
         setSuccess(true);
         setSubmitStatus("idle");
         return;
@@ -326,13 +378,13 @@ export function ReservationForm({ settings }: ReservationFormProps) {
 
   function resetAll() {
     setSuccess(false);
+    setConfirmationData(null);
     setDate("");
     setGuests(2);
     setManualTime("");
     setSlots([]);
     setSelectedTime(null);
     setName("");
-    setEmail("");
     setPhone("");
     setMessage("");
     setSubmitStatus("idle");
@@ -503,107 +555,216 @@ export function ReservationForm({ settings }: ReservationFormProps) {
           </div>
         )}
 
-        {success ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`${shell} border-emerald-500/25 bg-emerald-950/[0.15] text-center`}
-          >
-            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+        {/* Erfolgs-Popup */}
+        <AnimatePresence>
+          {success && confirmationData && (
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 18 }}
-              className="relative mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400/25 to-emerald-600/10 text-emerald-300 ring-1 ring-emerald-400/30"
-            >
-              <CheckCircle2 className="h-10 w-10" strokeWidth={1.25} />
-            </motion.div>
-            <p className="relative mt-8 font-heading text-2xl text-white md:text-3xl">
-              Vielen Dank, {name.trim() || "Gast"}!
-            </p>
-            <p className="relative mt-4 text-sm text-white/65">
-              {date && selectedTime && (
-                <>
-                  {new Date(date + "T12:00:00").toLocaleDateString("de-DE", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}{" "}
-                  · {selectedTime} Uhr · {guests}{" "}
-                  {guests === 1 ? "Person" : "Personen"}
-                </>
-              )}
-            </p>
-            <p className="relative mt-3 text-sm text-white/50">
-              Wir bestätigen Ihre Reservierung in Kürze.
-            </p>
-            {phoneDisplay && (
-              <p className="relative mt-8 text-xs text-white/40">
-                Rückfragen:{" "}
-                <a
-                  href={`tel:${phoneDisplay.replace(/\s/g, "")}`}
-                  className="text-[var(--color-secondary)] hover:underline"
-                >
-                  {phoneDisplay}
-                </a>
-              </p>
-            )}
-            <button
-              type="button"
+              key="success-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-50 flex items-center justify-center px-4"
               onClick={resetAll}
-              className="relative mt-10 text-[11px] font-semibold uppercase tracking-[0.25em] text-[var(--color-secondary)] transition hover:underline"
             >
-              Weitere Reservierung
-            </button>
-          </motion.div>
-        ) : !configLoading &&
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <motion.div
+                key="success-card"
+                initial={{ opacity: 0, scale: 0.92, y: 24 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 24 }}
+                transition={{ type: "spring", stiffness: 280, damping: 24 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#0e0e0e] px-8 py-10 text-center shadow-[0_32px_80px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.05]"
+              >
+                <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-emerald-500/10 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 -left-16 h-52 w-52 rounded-full bg-emerald-500/5 blur-3xl" />
+
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-white/30 transition hover:bg-white/[0.07] hover:text-white/70"
+                  aria-label="Schließen"
+                >
+                  ✕
+                </button>
+
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                  className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400/20 to-emerald-600/10 text-emerald-300 ring-1 ring-emerald-400/25"
+                >
+                  <CheckCircle2 className="h-11 w-11" strokeWidth={1.2} />
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18 }}
+                  className="relative mt-7 font-heading text-2xl font-semibold text-white md:text-3xl"
+                  style={{ fontFamily: "var(--font-heading), serif" }}
+                >
+                  Reservierung bestätigt!
+                </motion.p>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.22 }}
+                  className="relative mt-2 text-base text-white/70"
+                >
+                  Vielen Dank, <span className="font-medium text-white">{confirmationData.name || "Gast"}</span>!
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.28 }}
+                  className="relative mx-auto mt-6 space-y-2.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-6 py-4 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/45">Datum</span>
+                    <span className="font-medium text-white">
+                      {new Date(confirmationData.date + "T12:00:00").toLocaleDateString("de-DE", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="h-px bg-white/[0.06]" />
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/45">Uhrzeit</span>
+                    <span className="font-medium text-white">{confirmationData.time} Uhr</span>
+                  </div>
+                  <div className="h-px bg-white/[0.06]" />
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/45">Personen</span>
+                    <span className="font-medium text-white">
+                      {confirmationData.guests} {confirmationData.guests === 1 ? "Person" : "Personen"}
+                    </span>
+                  </div>
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.34 }}
+                  className="relative mt-5 text-sm text-white/45"
+                >
+                  Wir bestätigen Ihre Reservierung in Kürze.
+                </motion.p>
+
+                {phoneDisplay && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.38 }}
+                    className="relative mt-3 text-xs text-white/30"
+                  >
+                    Rückfragen:{" "}
+                    <a
+                      href={`tel:${phoneDisplay.replace(/\s/g, "")}`}
+                      className="text-[var(--color-secondary)] hover:underline"
+                    >
+                      {phoneDisplay}
+                    </a>
+                  </motion.p>
+                )}
+
+                <motion.button
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.42 }}
+                  type="button"
+                  onClick={resetAll}
+                  className="relative mt-8 inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-secondary)]/15 px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.22em] text-[var(--color-secondary)] ring-1 ring-[var(--color-secondary)]/20 transition hover:bg-[var(--color-secondary)]/25"
+                >
+                  Schließen
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!configLoading &&
           reservationEnabled === true &&
           reservationMode === "simple" ? (
           <form
             onSubmit={handleSimpleSubmit}
             className={`${shell} mt-2 space-y-8`}
           >
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 text-xs leading-relaxed text-white/50">
-              <span className="font-medium text-[var(--color-secondary)]">
-                Hinweis:
-              </span>{" "}
-              Ohne erweiterte Konfiguration prüfen wir keine freien Kapazitäten
-              automatisch. Optional können Sie später in der Datenbank{" "}
-              <code className="rounded bg-white/5 px-1 text-[var(--color-secondary)]">
-                reservation_config
-              </code>{" "}
-              pflegen – dann erscheint die Buchung mit Zeitslots.
-            </div>
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <label className={labelClass} htmlFor="simple-date">
                   <CalendarDays className="h-3.5 w-3.5" />
                   Datum *
                 </label>
-                <input
-                  id="simple-date"
-                  type="date"
-                  required
-                  min={todayMinDate}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className={inputClass}
-                />
+                {openDates.length === 0 ? (
+                  <input
+                    id="simple-date"
+                    type="date"
+                    required
+                    min={todayMinDate}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={inputClass}
+                  />
+                ) : (
+                  <select
+                    id="simple-date"
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="">Datum wählen</option>
+                    {openDates.map((d) => (
+                      <option key={d} value={d} className="bg-[#1a1a1a]">
+                        {new Date(d + "T12:00:00").toLocaleDateString("de-DE", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className={labelClass} htmlFor="simple-time">
                   <Clock className="h-3.5 w-3.5" />
                   Uhrzeit *
                 </label>
-                <input
-                  id="simple-time"
-                  type="time"
-                  required
-                  value={manualTime}
-                  onChange={(e) => setManualTime(e.target.value)}
-                  className={inputClass}
-                />
+                {simpleTimeSlots.length > 0 ? (
+                  <select
+                    id="simple-time"
+                    required
+                    value={manualTime}
+                    onChange={(e) => setManualTime(e.target.value)}
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="">Uhrzeit wählen</option>
+                    {simpleTimeSlots.map((t) => (
+                      <option key={t} value={t} className="bg-[#1a1a1a]">
+                        {t} Uhr
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="simple-time"
+                    type="time"
+                    required
+                    value={manualTime}
+                    onChange={(e) => setManualTime(e.target.value)}
+                    className={inputClass}
+                    placeholder={date ? "Keine Zeiten hinterlegt" : "Zuerst Datum wählen"}
+                  />
+                )}
               </div>
             </div>
             <div>
@@ -626,35 +787,19 @@ export function ReservationForm({ settings }: ReservationFormProps) {
                 ))}
               </select>
             </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className={labelClass} htmlFor="simple-name">
-                  Name *
-                </label>
-                <input
-                  id="simple-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoComplete="name"
-                  className={inputClass}
-                  placeholder="Vor- und Nachname"
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="simple-email">
-                  E-Mail *
-                </label>
-                <input
-                  id="simple-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className={inputClass}
-                />
-              </div>
+            <div>
+              <label className={labelClass} htmlFor="simple-name">
+                Name *
+              </label>
+              <input
+                id="simple-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoComplete="name"
+                className={inputClass}
+                placeholder="Vor- und Nachname"
+              />
             </div>
             <div>
               <label className={labelClass} htmlFor="simple-phone">
@@ -927,36 +1072,19 @@ export function ReservationForm({ settings }: ReservationFormProps) {
                     <p className="mt-2 text-sm text-white/55">
                       Ihre Kontaktdaten
                     </p>
-                    <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClass} htmlFor="res-name">
-                          Name *
-                        </label>
-                        <input
-                          id="res-name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          required
-                          autoComplete="name"
-                          className={inputClass}
-                          placeholder="Vor- und Nachname"
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass} htmlFor="res-email">
-                          E-Mail *
-                        </label>
-                        <input
-                          id="res-email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          autoComplete="email"
-                          className={inputClass}
-                          placeholder="für die Bestätigung"
-                        />
-                      </div>
+                    <div className="mt-6">
+                      <label className={labelClass} htmlFor="res-name">
+                        Name *
+                      </label>
+                      <input
+                        id="res-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        autoComplete="name"
+                        className={inputClass}
+                        placeholder="Vor- und Nachname"
+                      />
                     </div>
                     <div className="mt-5">
                       <label className={labelClass} htmlFor="res-phone">

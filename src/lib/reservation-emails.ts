@@ -52,10 +52,12 @@ export async function sendReservationConfirmationEmails(opts: {
     { weekday: "long", day: "numeric", month: "long", year: "numeric" }
   );
 
-  await sendResend({
-    to: opts.guestEmail,
-    subject: `Reservierungsanfrage bei uns – ${dateFmt}`,
-    html: `
+  const guestMail = opts.guestEmail.trim();
+  if (guestMail) {
+    await sendResend({
+      to: guestMail,
+      subject: `Reservierungsanfrage bei uns – ${dateFmt}`,
+      html: `
       <p>Hallo ${escapeHtml(opts.guestName)},</p>
       <p>vielen Dank für Ihre Reservierungsanfrage.</p>
       <ul>
@@ -70,9 +72,13 @@ export async function sendReservationConfirmationEmails(opts: {
           : ""
       }
     `,
-  });
+    });
+  }
 
   if (opts.restaurantEmail?.trim()) {
+    const emailLine = guestMail
+      ? escapeHtml(guestMail)
+      : "nicht angegeben";
     await sendResend({
       to: opts.restaurantEmail.trim(),
       subject: `Neue Reservierungsanfrage: ${escapeHtml(opts.guestName)}`,
@@ -80,7 +86,7 @@ export async function sendReservationConfirmationEmails(opts: {
         <p><strong>Neue Anfrage über die Website</strong></p>
         <ul>
           <li><strong>Name:</strong> ${escapeHtml(opts.guestName)}</li>
-          <li><strong>E-Mail:</strong> ${escapeHtml(opts.guestEmail)}</li>
+          <li><strong>E-Mail:</strong> ${emailLine}</li>
           <li><strong>Datum:</strong> ${escapeHtml(dateFmt)}</li>
           <li><strong>Uhrzeit:</strong> ${escapeHtml(opts.time)}</li>
           <li><strong>Gäste:</strong> ${opts.guests}</li>

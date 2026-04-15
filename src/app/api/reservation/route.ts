@@ -75,13 +75,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!email) {
-      return NextResponse.json(
-        { success: false, error: "E-Mail ist erforderlich." },
-        { status: 400 }
-      );
-    }
-
     if (!isValidDateYYYYMMDD(date) || !isTodayOrFutureDate(date)) {
       return NextResponse.json(
         {
@@ -135,10 +128,9 @@ export async function POST(request: Request) {
         );
       }
 
-      const insertSimple: Record<string, unknown> = {
+      const insertSimpleFull: Record<string, unknown> = {
         tenant_id: tenantId,
         name,
-        email,
         phone: phone || null,
         date,
         time: slotKey,
@@ -148,13 +140,32 @@ export async function POST(request: Request) {
         source: "website",
       };
 
-      const { data: rowSimple, error: insertSimpleErr } = await supabase
+      let { data: rowSimple, error: insertSimpleErr } = await supabase
         .from("reservations")
-        .insert(insertSimple)
+        .insert(insertSimpleFull)
         .select("id")
         .single();
 
-      if (insertSimpleErr) {
+      if (insertSimpleErr?.code === "PGRST204") {
+        const insertSimpleMin: Record<string, unknown> = {
+          tenant_id: tenantId,
+          name,
+          phone: phone || null,
+          date,
+          time: slotKey,
+          guests: guestsNum,
+          status: "pending",
+        };
+        const retry = await supabase
+          .from("reservations")
+          .insert(insertSimpleMin)
+          .select("id")
+          .single();
+        rowSimple = retry.data;
+        insertSimpleErr = retry.error;
+      }
+
+      if (insertSimpleErr || !rowSimple) {
         console.error("reservation insert (simple):", insertSimpleErr);
         return NextResponse.json(
           {
@@ -279,10 +290,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const insertRow: Record<string, unknown> = {
+    const insertRowFull: Record<string, unknown> = {
       tenant_id: tenantId,
       name,
-      email,
       phone: phone || null,
       date,
       time: slotKey,
@@ -293,13 +303,32 @@ export async function POST(request: Request) {
       table_size: tableSize,
     };
 
-    const { data: row, error: insertError } = await supabase
+    let { data: row, error: insertError } = await supabase
       .from("reservations")
-      .insert(insertRow)
+      .insert(insertRowFull)
       .select("id")
       .single();
 
-    if (insertError) {
+    if (insertError?.code === "PGRST204") {
+      const insertRowMin: Record<string, unknown> = {
+        tenant_id: tenantId,
+        name,
+        phone: phone || null,
+        date,
+        time: slotKey,
+        guests: guestsNum,
+        status: "pending",
+      };
+      const retry = await supabase
+        .from("reservations")
+        .insert(insertRowMin)
+        .select("id")
+        .single();
+      row = retry.data;
+      insertError = retry.error;
+    }
+
+    if (insertError || !row) {
       console.error("reservation insert:", insertError);
       return NextResponse.json(
         {
