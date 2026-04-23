@@ -115,7 +115,7 @@ export function parseReservationConfig(raw: unknown): ReservationConfig | null {
   for (const row of tablesRaw) {
     if (!row || typeof row !== "object") continue;
     const r = row as Record<string, unknown>;
-    const seats = Number(r.seats);
+    const seats = Number(r.seats ?? r.size);
     const count = Number(r.count);
     if (!Number.isFinite(seats) || seats <= 0) continue;
     if (!Number.isFinite(count) || count <= 0) continue;

@@ -128,42 +128,23 @@ export async function POST(request: Request) {
         );
       }
 
-      const insertSimpleFull: Record<string, unknown> = {
+      const insertSimple: Record<string, unknown> = {
         tenant_id: tenantId,
-        name,
-        phone: phone || null,
+        guest_name: name,
+        guest_phone: phone || null,
         date,
         time: slotKey,
         guests: guestsNum,
-        message: notes || null,
+        notes: notes || null,
         status: "pending",
         source: "website",
       };
 
-      let { data: rowSimple, error: insertSimpleErr } = await supabase
+      const { data: rowSimple, error: insertSimpleErr } = await supabase
         .from("reservations")
-        .insert(insertSimpleFull)
+        .insert(insertSimple)
         .select("id")
         .single();
-
-      if (insertSimpleErr?.code === "PGRST204") {
-        const insertSimpleMin: Record<string, unknown> = {
-          tenant_id: tenantId,
-          name,
-          phone: phone || null,
-          date,
-          time: slotKey,
-          guests: guestsNum,
-          status: "pending",
-        };
-        const retry = await supabase
-          .from("reservations")
-          .insert(insertSimpleMin)
-          .select("id")
-          .single();
-        rowSimple = retry.data;
-        insertSimpleErr = retry.error;
-      }
 
       if (insertSimpleErr || !rowSimple) {
         console.error("reservation insert (simple):", insertSimpleErr);
@@ -290,43 +271,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const insertRowFull: Record<string, unknown> = {
+    const insertRow: Record<string, unknown> = {
       tenant_id: tenantId,
-      name,
-      phone: phone || null,
+      guest_name: name,
+      guest_phone: phone || null,
       date,
       time: slotKey,
       guests: guestsNum,
-      message: notes || null,
+      notes: notes || null,
       status: "pending",
       source: "website",
       table_size: tableSize,
     };
 
-    let { data: row, error: insertError } = await supabase
+    const { data: row, error: insertError } = await supabase
       .from("reservations")
-      .insert(insertRowFull)
+      .insert(insertRow)
       .select("id")
       .single();
-
-    if (insertError?.code === "PGRST204") {
-      const insertRowMin: Record<string, unknown> = {
-        tenant_id: tenantId,
-        name,
-        phone: phone || null,
-        date,
-        time: slotKey,
-        guests: guestsNum,
-        status: "pending",
-      };
-      const retry = await supabase
-        .from("reservations")
-        .insert(insertRowMin)
-        .select("id")
-        .single();
-      row = retry.data;
-      insertError = retry.error;
-    }
 
     if (insertError || !row) {
       console.error("reservation insert:", insertError);

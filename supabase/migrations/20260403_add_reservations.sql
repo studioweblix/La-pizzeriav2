@@ -8,13 +8,15 @@ ALTER TABLE store_settings
 CREATE TABLE IF NOT EXISTS reservations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  email text NOT NULL,
-  phone text,
+  guest_name text NOT NULL,
+  guest_email text,
+  guest_phone text,
   date date NOT NULL,
   time text NOT NULL,
   guests integer NOT NULL DEFAULT 2,
-  message text,
+  table_size integer,
+  notes text,
+  source text,
   status text NOT NULL DEFAULT 'pending',
   created_at timestamptz NOT NULL DEFAULT now()
 );

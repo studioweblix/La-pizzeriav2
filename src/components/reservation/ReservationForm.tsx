@@ -648,15 +648,6 @@ export function ReservationForm({ settings }: ReservationFormProps) {
                   </div>
                 </motion.div>
 
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.34 }}
-                  className="relative mt-5 text-sm text-white/45"
-                >
-                  Wir bestätigen Ihre Reservierung in Kürze.
-                </motion.p>
-
                 {phoneDisplay && (
                   <motion.p
                     initial={{ opacity: 0 }}
